@@ -400,25 +400,27 @@ if __name__ == "__main__":
     ], "Invalid run mode"
 
     template_bot = FallTemplateBot2025(
-        research_reports_per_question=1,
-        predictions_per_research_report=5,
-        use_research_summary_to_forecast=False,
-        publish_reports_to_metaculus=True,
-        folder_to_save_reports_to=None,
-        skip_previously_forecasted_questions=True,
-        # llms={  # choose your model names or GeneralLlm llms here, otherwise defaults will be chosen for you
-        #     "default": GeneralLlm(
-        #         model="openrouter/openai/gpt-4o", # "anthropic/claude-3-5-sonnet-20241022", etc (see docs for litellm)
-        #         temperature=0.3,
-        #         timeout=40,
-        #         allowed_tries=2,
-        #     ),
-        #     "summarizer": "openai/gpt-4o-mini",
-        #     "researcher": "asknews/deep-research/low",
-        #     "parser": "openai/gpt-4o-mini",
-        # },
-    )
-
+    research_reports_per_question=1,  # Keep low to reduce free-tier usage
+    predictions_per_research_report=3,  # Reduced from 5 to stay under rate limits
+    use_research_summary_to_forecast=False,  # Skip to avoid extra LLM calls
+    publish_reports_to_metaculus=True,
+    folder_to_save_reports_to=None,
+    skip_previously_forecasted_questions=True,
+    llms={
+        "default": GeneralLlm(
+            model="openrouter/mistralai/mixtral-8x7b-instruct",  # Best free model
+            temperature=0.25,  # More deterministic than template's 0.3
+            timeout=45,  # Free models are slower
+            allowed_tries=3,  # Free APIs fail more often
+        ),
+        "researcher": "smart-searcher/mixtral-8x7b",  # Free alternative to AskNews
+        "parser": GeneralLlm(
+            model="openrouter/google/gemini-pro",  # Free and decent at parsing
+            temperature=0.1,  # Needs to be precise
+            timeout=30,
+        ),
+    }
+)
     if run_mode == "tournament":
         seasonal_tournament_reports = asyncio.run(
             template_bot.forecast_on_tournament(
